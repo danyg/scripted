@@ -47,8 +47,24 @@ var getDirectory = require('./utils').getDirectory;
 var when = require('when');
 
 var stategyResolvers = {
-	_dgStategyResolver: function(dep) {
-		return '../' + dep.plugin + 's/' + dep.resource;
+	_dgStategyResolver: function(dep, context) {
+		var myContext = context.replace(/\\/g, '/');
+		var srvPos = myContext.indexOf('services/');
+		if(srvPos !== -1) {
+			var path = myContext.substring(srvPos),
+				basePath = 'services/'
+			;
+			path = path.split('/');
+			if(path[1].indexOf('.js') !== -1) {
+				basePath += path[1].substring(0, path[1].length - 3) + '/';
+			} else {
+				basePath += path[1] + '/';
+			}
+
+			return basePath + dep.plugin + 's/' + dep.resource;
+		} else {
+			return '../' + dep.plugin + 's/' + dep.resource;
+		}
 	},
 	service: function(dep) {
 		if(dep.resource.indexOf('/') === -1){
@@ -115,10 +131,10 @@ function configure(conf) {
 	}
 
 	//dep must be parsed before calling this!
-	function getResource(dep) {
+	function getResource(dep, context) {
 		if( dep.hasOwnProperty('plugin') ) {
 			if(isStrategyPlugin(dep)) {
-				return stategyResolvers[dep.plugin](dep);
+				return stategyResolvers[dep.plugin](dep, context);
 			}
 			return dep.resource;
 		} else {
@@ -165,7 +181,7 @@ function configure(conf) {
 		parseName(dep);
 		//TODO: special case where resource already has a .js extension. This is
 		// treated specially in requirejs.
-		var resource = getResource(dep);
+		var resource = getResource(dep, context);
 		var ext = getExtension(dep);
 
 console.log('DG ! INFERER >>>> ', dep, resource, context);

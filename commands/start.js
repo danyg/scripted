@@ -49,18 +49,26 @@ function ping(options) {
 
 function start(options) {
 	var tmp = process.platform == 'win32' ? process.env.TEMP : '/tmp',
-		out = fs.openSync(tmp + '/scripted.log', 'a'),
-		err = fs.openSync(tmp + '/scripted.log', 'a'),
+		out,
+		err,
 		child;
 
 	var file = options._;
 	var suppressOpen = options.suppressOpen?'true':'false';
+
+	if(!!options.wipeLog){
+		fs.truncateSync(tmp + '/scripted.log', 0);
+	}
+
+	out = fs.openSync(tmp + '/scripted.log', 'a'),
+	err = fs.openSync(tmp + '/scripted.log', 'a'),
+
 	// console.log("path is "+path.resolve(path.dirname(module.filename),'../commands/scripted.js'));
-	child = spawn('node', [ path.resolve(path.dirname(module.filename),'../commands/scripted.js'), file, suppressOpen ],{
+	child = spawn('node', [ path.resolve(path.dirname(module.filename),'../commands/scripted.js'), suppressOpen, file ],{
 	        detached:true,
 		stdio: ['ignore', out, err]
 	});
-    
+
         var logfile = tmp + '/scripted.log';
         console.log('Log file: ' + logfile);
         tailf = spawn('tail', [ '-100f', logfile ],{ stdio: 'inherit' });

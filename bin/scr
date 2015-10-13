@@ -14,15 +14,19 @@
 var optimist = require('optimist');
 var	options;
 var cmd;
-	
+
 options = optimist
 	.alias('h', 'help')
 	.alias('r', 'restart')
 	.alias('k', 'kill')
+	.alias('s', 'suppressOpen')
+	.alias('w', 'wipeLog')
 	.usage('Usage: scr [-hrk] [file/directory]')
 	.describe('r','restart the server')
 	.describe('k','kill the server')
 	.describe('h','this help info')
+	.describe('s','suppress open the browser tab')
+	.describe('w','wipe the log file')
 	.argv;
 
 if (options.h) {
@@ -37,5 +41,5 @@ if (options.h) {
 		cmd = '../commands/start';
 	}
 }
-			
+
 require(cmd).exec(options);
