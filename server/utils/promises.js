@@ -2,7 +2,7 @@
  * @license
  * Copyright (c) 2012 VMware, Inc. All Rights Reserved.
  * THIS FILE IS PROVIDED UNDER THE TERMS OF THE ECLIPSE PUBLIC LICENSE
- * ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS FILE
+ * ('AGREEMENT'). ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS FILE
  * CONSTITUTES RECIPIENTS ACCEPTANCE OF THE AGREEMENT.
  * You can obtain a current copy of the Eclipse Public License from
  * http://www.opensource.org/licenses/eclipse-1.0.php
@@ -271,7 +271,7 @@
 		 */
 		function methodCaller(name) {
 			//TODO: more sensible error messages when calling non-existent methods.
-			var caller = function (self /*, args...*/) {
+			var callerBody = function (self /*, args...*/) {
 				var args = slice.call(arguments, 1);
 				return when(self, function (self) {
 					//console.log('calling '+name+' on '+self);
@@ -281,8 +281,19 @@
 					return nodeApply(f.bind(self), args);
 				});
 			};
-			caller.name = name+'MethodCaller';
+			// caller.name = name+'MethodCaller';
+			var caller = __renameFunction(name+'MethodCaller', callerBody);
 			return caller;
+		}
+
+		function __renameFunction (name, fn) {
+			var namedFn,
+				body = 'return function ' + name + '() { return call(this, arguments) }; ';
+// jshint ignore:start
+			namedFn = (new Function('return function (call) {' + body + '};')());
+// jshint ignore:end
+			!body;
+			return namedFn(Function.apply.bind(fn));
 		}
 
 		return {

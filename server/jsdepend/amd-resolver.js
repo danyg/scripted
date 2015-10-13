@@ -45,6 +45,16 @@ var pathResolve = require('./utils').pathResolve;
 var getDirectory = require('./utils').getDirectory;
 var when = require('when');
 
+var stategyResolvers = {
+	_dgStategyResolver: function(dep) {
+		return '../' + dep.plugin + 's/' + dep.resource;
+	}
+};
+stategyResolvers.model = stategyResolvers._dgStategyResolver;
+stategyResolvers.view = stategyResolvers._dgStategyResolver;
+stategyResolvers.helper = stategyResolvers._dgStategyResolver;
+stategyResolvers.widget = stategyResolvers._dgStategyResolver;
+
 function configure(conf) {
 
 	var getAmdConfig = require('./amd-config-finder').configure(conf).getAmdConfig;
@@ -59,6 +69,14 @@ function configure(conf) {
 			deferred.resolve(mPathMapper.configure(resolverConf));
 		});
 		return deferred.promise;
+	}
+
+	function isStrategyPlugin(dep) {
+		if(typeof dep === 'string'){
+			return stategyResolvers.hasOwnProperty(dep);
+		} else {
+			return stategyResolvers.hasOwnProperty(dep.plugin);
+		}
 	}
 
 	function isRelative(path) {
@@ -89,7 +107,16 @@ function configure(conf) {
 
 	//dep must be parsed before calling this!
 	function getResource(dep) {
-		return dep.hasOwnProperty('plugin') ? dep.resource : dep.name;
+		if( dep.hasOwnProperty('plugin') ) {
+			if(isStrategyPlugin(dep)) {
+				return stategyResolvers[dep.plugin](dep);
+			}
+			return dep.resource;
+		} else {
+			return dep.name;
+		}
+
+		//return dep.hasOwnProperty('plugin') ? dep.resource : dep.name;
 	}
 
 	/**
@@ -104,7 +131,9 @@ function configure(conf) {
 		if (pluginName) {
 			if (PLUGIN_EXTENSIONS.hasOwnProperty(pluginName)) {
 				return PLUGIN_EXTENSIONS[pluginName];
-			} else {
+			} else if(isStrategyPlugin(dep)) {
+				return '.js';
+			}else {
 				return null; //Makes the reference be ignored (rather reported as 'missing').
 			}
 		}
@@ -127,6 +156,9 @@ function configure(conf) {
 		// treated specially in requirejs.
 		var resource = getResource(dep);
 		var ext = getExtension(dep);
+
+console.log('DG ! INFERER', dep, resource);
+
 		if (!resource || ext===null) {
 			//This is a case like 'domReady!' or an unsupported plugin
 			//There's nothing to resolve. Let client know not to report this as an error.
@@ -136,9 +168,11 @@ function configure(conf) {
 			dep.ignore = true;
 			return callback(dep); //TODO: add a regression test!
 		} else if (isRelative(resource)) {
+console.log('DG ! INFERER', 'IS RELATIVE');
 			//Relative resolution doesn't require the resolverConf so avoid fetching it
 			var baseDir = getDirectory(context); //relative to context file, not amd config
 			dep.path = pathResolve(baseDir, resource) + ext;
+console.log('DG ! INFERER', dep);
 			return callback(dep);
 		} else {
 			when(getPathMapper(context), function (mapper) {
