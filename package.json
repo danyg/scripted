@@ -54,7 +54,7 @@
 	},
 	"devDependencies": {
 		"fake-fs": "https://github.com/eldargab/node-fake-fs/archive/50f54e9551d9ece5578213564268021d4976db26.tar.gz",
-		"nodeunit": "0.7.4"
+		"nodeunit": "0.9.1"
 	},
 	"license": "EPL",
 	"readmeFilename": "README.md"
