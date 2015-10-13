@@ -9,6 +9,7 @@
  *
  * Contributors:
  *     Kris De Volder - initial API and implementation
+ *     Daniel Goberitz - modulesLoder Compatibility
  ******************************************************************************/
 
 /*global resolve require define:true esprima console module*/
@@ -40,7 +41,7 @@ var PLUGIN_EXTENSIONS = {
 
 var mPathMapper = require('./amd-path-mapper');
 var startsWith = require('./utils').startsWith;
-var endsWith = require('./utils').endsWith;
+// var endsWith = require('./utils').endsWith;
 var pathResolve = require('./utils').pathResolve;
 var getDirectory = require('./utils').getDirectory;
 var when = require('when');
@@ -48,6 +49,14 @@ var when = require('when');
 var stategyResolvers = {
 	_dgStategyResolver: function(dep) {
 		return '../' + dep.plugin + 's/' + dep.resource;
+	},
+	service: function(dep) {
+		if(dep.resource.indexOf('/') === -1){
+			return 'services/' + dep.resource + '/' + dep.resource;
+		} else {
+			var path = dep.resource.split('/');
+			return 'services/' + path[0] + '/' + path[1] + '/' + path[1];
+		}
 	}
 };
 stategyResolvers.model = stategyResolvers._dgStategyResolver;
@@ -136,6 +145,8 @@ function configure(conf) {
 			}else {
 				return null; //Makes the reference be ignored (rather reported as 'missing').
 			}
+		} else if(dep.name.indexOf('.js') !== -1) { // Quick fix for dependencies of strategy modules...
+			return '';
 		}
 		return '.js'; //Default extension added by typical amd loader.
 	}
@@ -157,7 +168,7 @@ function configure(conf) {
 		var resource = getResource(dep);
 		var ext = getExtension(dep);
 
-console.log('DG ! INFERER', dep, resource);
+console.log('DG ! INFERER >>>> ', dep, resource, context);
 
 		if (!resource || ext===null) {
 			//This is a case like 'domReady!' or an unsupported plugin
@@ -168,11 +179,9 @@ console.log('DG ! INFERER', dep, resource);
 			dep.ignore = true;
 			return callback(dep); //TODO: add a regression test!
 		} else if (isRelative(resource)) {
-console.log('DG ! INFERER', 'IS RELATIVE');
 			//Relative resolution doesn't require the resolverConf so avoid fetching it
 			var baseDir = getDirectory(context); //relative to context file, not amd config
 			dep.path = pathResolve(baseDir, resource) + ext;
-console.log('DG ! INFERER', dep);
 			return callback(dep);
 		} else {
 			when(getPathMapper(context), function (mapper) {

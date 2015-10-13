@@ -22,6 +22,8 @@ var url = "http://localhost:7261";
 var suppressOpen = process.argv[2]=='true';
 var file = process.argv[3];
 
+console.log('\n\n################################################################################\n');
+
 var filesystem = require('../server/utils/filesystem').withBaseDir(null);
 
 // Hack alert! The code below is just to play with a very simple case of
